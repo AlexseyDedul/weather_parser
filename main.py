@@ -3,6 +3,8 @@ import feedparser
 import requests
 import csv
 
+main_filename = "./resourse/"
+
 main_url = 'https://meteoinfo.ru'
 
 list_cities = [
@@ -168,10 +170,31 @@ def get_weather_for_city():
     return list_weather
 
 
+def save_to_file(filename, data):
+    with open(filename, 'w', newline="") as file:
+        writer = csv.DictWriter(file, data[0].keys())
+        writer.writeheader()
+        writer.writerows(data)
+        print("Файл записан.")
+
+
+def read_from_file(filename):
+    with open(filename, 'r', newline="") as file:
+        reader = csv.DictReader(file)
+        print("Чтение из файла")
+        for row in reader:
+            print(f"Город и день: {row['title']} - погода {row['summary']}")
+
+
 def main():
     while True:
-        for weather in get_weather_for_city():
-            print(weather)
+        data = get_weather_for_city()
+        file = main_filename + data[0]['title']
+        # print(data[0].keys())
+        save_to_file(file, data)
+        read_from_file(file)
+        # for weather in data:
+        #     print(weather)
 
 
 if __name__ == '__main__':
