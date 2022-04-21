@@ -2,6 +2,7 @@ import bs4
 import feedparser
 import requests
 import csv
+import asyncio
 
 main_filename = "./resourse/"
 
@@ -133,7 +134,10 @@ def print_cities():
         counter += 1
         print(f'{counter} - {city["city"]}')
 
-    namber_city = input("Введите номер города: ")
+    namber_city = -1
+
+    while (int(namber_city) < 1 or int(namber_city) > len(list_cities)):
+        namber_city = input("Введите номер города: ")
 
     return list_cities[int(namber_city) - 1]
 
@@ -152,8 +156,8 @@ def get_rss_link(city: dict):
     return main_url_rss
 
 
-def get_weather_for_city():
-    rss_url = main_url + get_rss_link(print_cities())
+def get_weather_for_city(city):
+    rss_url = main_url + get_rss_link(city)
     text = feedparser.parse(rss_url)
 
     list_weather = []
@@ -186,16 +190,34 @@ def read_from_file(filename):
             print(f"Город и день: {row['title']} - погода {row['summary']}")
 
 
-def main():
+async def get_weather():
     while True:
-        data = get_weather_for_city()
-        file = main_filename + data[0]['title']
-        # print(data[0].keys())
-        save_to_file(file, data)
+        for city in list_cities:
+            data = get_weather_for_city(city)
+            file = main_filename + city['city']
+            # print(data[0].keys())
+            save_to_file(file, data)
+        await asyncio.sleep(10)
+
+
+async def print_weather():
+    while True:
+        city = print_cities()
+        file = main_filename + city['city']
         read_from_file(file)
-        # for weather in data:
-        #     print(weather)
+        await asyncio.sleep(.1)
+
+
+async def main():
+    tasks = []
+    tasks.append(asyncio.create_task(get_weather()))
+    tasks.append(asyncio.create_task(print_weather()))
+
+    await asyncio.gather(
+        *tasks
+    )
 
 
 if __name__ == '__main__':
-    main()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
